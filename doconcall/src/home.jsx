@@ -237,7 +237,7 @@ export default function DoconcallApp() {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [chatMessages]);
+  }, [chatMessages, isChatOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -283,29 +283,57 @@ export default function DoconcallApp() {
     setUserMessage('');
     setIsLoading(true);
     
-    // Simulate AI response for healthcare assistant
-    setTimeout(() => {
-      let aiResponse;
-      const userMsg = userMessage.toLowerCase();
+    try {
+      // This is where you'll integrate with OpenRouter API
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer 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', // Your API key
+          'HTTP-Referer': 'https://your-website.com', // Required by OpenRouter
+          'X-Title': 'Doconcall Health Assistant' // Optional - your app name
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-3.5-turbo', // Choose your preferred model
+          messages: [
+            // System message to instruct the AI how to respond
+            {
+              role: 'system',
+              content: 'You are a helpful healthcare assistant for Doconcall. Provide helpful but cautious health information. Always remind users to seek professional medical advice for serious concerns. Never diagnose conditions or prescribe treatments.'
+            },
+            // Only include the actual conversation messages (skip the welcome message)
+            ...chatMessages.filter((msg, index) => index !== 0).slice(-5),
+            // Include the user's new message
+            newUserMessage
+          ]
+        })
+      });
       
-      if (userMsg.includes('covid') || userMsg.includes('coronavirus')) {
-        aiResponse = "For COVID-19 concerns, I recommend checking symptoms against official guidelines and getting tested if necessary. Remember to follow local health protocols. Would you like me to help you find the nearest testing center?";
-      } else if (userMsg.includes('headache') || userMsg.includes('pain')) {
-        aiResponse = "I'm sorry to hear you're experiencing discomfort. While occasional headaches can be managed with rest and over-the-counter medication, persistent pain should be evaluated by a healthcare professional. Would you like me to help you find a doctor?";
-      } else if (userMsg.includes('appointment') || userMsg.includes('book')) {
-        aiResponse = "I can help you connect with a doctor. Please use our 'Find a Doctor' tab to search by specialty, then click 'Contact' to schedule an appointment. Is there a specific medical specialty you're looking for?";
-      } else if (userMsg.includes('emergency')) {
-        aiResponse = "If you're experiencing a medical emergency, please call emergency services immediately at 112 or go to your nearest emergency room. Your safety is the priority.";
+      const data = await response.json();
+      
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        setChatMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.choices[0].message.content
+        }]);
       } else {
-        aiResponse = "Thank you for your question. For personalized medical advice, it's best to consult with a healthcare professional. I can help you find a doctor through our platform. Would you like to search for a specialist?";
+        // Fallback if API response format isn't as expected
+        setChatMessages(prev => [...prev, {
+          role: 'assistant',
+          content: "I'm sorry, I couldn't process your request. Please try again."
+        }]);
       }
+    } catch (error) {
+      console.error('Error calling OpenRouter API:', error);
       
+      // Fallback response if API call fails
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: aiResponse
+        content: "I'm sorry, I'm having trouble connecting right now. Please try again later."
       }]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   // Logo component
@@ -522,9 +550,9 @@ export default function DoconcallApp() {
   );
 
   const renderChatBot = () => (
-    <div className={`fixed bottom-6 right-6 w-80 bg-white rounded-lg shadow-xl transition-all duration-300 ${isChatOpen ? 'h-96' : 'h-12'} border border-blue-200`}>
+    <div className={`fixed bottom-6 right-6 z-50 w-80 bg-white rounded-lg shadow-xl transition-all duration-300 ${isChatOpen ? 'h-96' : 'h-12'} border border-blue-200 flex flex-col`}>
       <div 
-        className="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center cursor-pointer"
+        className="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center cursor-pointer flex-shrink-0"
         onClick={() => setIsChatOpen(!isChatOpen)}
       >
         <div className="flex items-center gap-2">
@@ -537,10 +565,11 @@ export default function DoconcallApp() {
       </div>
       
       {isChatOpen && (
-        <div className="flex flex-col h-full">
+        <>
           <div 
             ref={chatContainerRef}
-            className="flex-1 p-4 overflow-y-auto bg-gray-50"
+            className="flex-1 p-4 overflow-y-auto bg-gray-50 h-full"
+            style={{ maxHeight: "calc(100% - 96px)" }}
           >
             {chatMessages.map((msg, index) => (
               <div 
@@ -569,7 +598,7 @@ export default function DoconcallApp() {
             )}
           </div>
           
-          <form onSubmit={sendMessageToAI} className="p-3 border-t">
+          <form onSubmit={sendMessageToAI} className="p-3 border-t bg-white flex-shrink-0 rounded-b-lg">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -588,7 +617,7 @@ export default function DoconcallApp() {
               </button>
             </div>
           </form>
-        </div>
+        </>
       )}
     </div>
   );
