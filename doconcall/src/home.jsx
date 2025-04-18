@@ -284,52 +284,68 @@ export default function DoconcallApp() {
     setIsLoading(true);
     
     try {
-      // This is where you'll integrate with OpenRouter API
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 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', // Your API key
-          'HTTP-Referer': 'https://your-website.com', // Required by OpenRouter
-          'X-Title': 'Doconcall Health Assistant' // Optional - your app name
+          'Authorization': 'Bearer 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',
+          'HTTP-Referer': 'https://doconcall.com',
+          'X-Title': 'Doconcall Health Assistant'
         },
         body: JSON.stringify({
-          model: 'openai/gpt-3.5-turbo', // Choose your preferred model
+          model: 'openai/gpt-3.5-turbo',
           messages: [
-            // System message to instruct the AI how to respond
             {
               role: 'system',
-              content: 'You are a helpful healthcare assistant for Doconcall. Provide helpful but cautious health information. Always remind users to seek professional medical advice for serious concerns. Never diagnose conditions or prescribe treatments.'
+              content: `You are a helpful healthcare assistant for Doconcall. Provide helpful but cautious health information. 
+              Your responses should be:
+              1. Professional yet friendly
+              2. Focused on Nigerian healthcare context
+              3. Provide general advice but always recommend consulting a doctor
+              4. Never diagnose conditions or prescribe treatments
+              5. Keep responses concise but informative
+              6. For serious symptoms, always advise immediate medical attention
+              7. When suggesting doctors, recommend relevant specialties based on symptoms`
             },
-            // Only include the actual conversation messages (skip the welcome message)
             ...chatMessages.filter((msg, index) => index !== 0).slice(-5),
-            // Include the user's new message
             newUserMessage
-          ]
+          ],
+          temperature: 0.7,
+          max_tokens: 500
         })
       });
       
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
       const data = await response.json();
       
-      if (data.choices && data.choices[0] && data.choices[0].message) {
+      if (data.choices?.[0]?.message?.content) {
         setChatMessages(prev => [...prev, {
           role: 'assistant',
           content: data.choices[0].message.content
         }]);
       } else {
-        // Fallback if API response format isn't as expected
         setChatMessages(prev => [...prev, {
           role: 'assistant',
-          content: "I'm sorry, I couldn't process your request. Please try again."
+          content: "I'm having some technical difficulties. Here's what I can suggest:\n\n" +
+                   "1. Try rephrasing your question\n" +
+                   "2. Check your internet connection\n" +
+                   "3. For urgent medical help, please call emergency services\n\n" +
+                   "You can also try searching for doctors or hospitals using the app features."
         }]);
       }
     } catch (error) {
       console.error('Error calling OpenRouter API:', error);
       
-      // Fallback response if API call fails
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again later."
+        content: "I apologize for the inconvenience. As your health assistant, I want to ensure you get proper care.\n\n" +
+                 "While we fix this technical issue, you can:\n" +
+                 "• Use the 'Find Doctor' tab to connect with healthcare providers\n" +
+                 "• Search nearby hospitals in the 'Find Hospital' section\n" +
+                 "• For emergencies, please contact your local hospital immediately"
       }]);
     } finally {
       setIsLoading(false);
