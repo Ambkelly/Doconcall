@@ -288,7 +288,7 @@ export default function DoconcallApp() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer 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',
           'HTTP-Referer': 'https://doconcall.com',
           'X-Title': 'Doconcall Health Assistant'
         },
