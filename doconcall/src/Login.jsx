@@ -141,7 +141,7 @@ export default function AuthComponent({ onLoginSuccess }) {
         </div>
         <Phone className="absolute bottom-0 right-0 text-white bg-green-500 rounded-full p-0.5" size={12} />
       </div>
-      <h1 className="text-2xl font-bold text-blue-700">Doconcall</h1>
+      <h1 className="text-2xl font-bold text-white">Doconcall</h1>
     </div>
   );
   

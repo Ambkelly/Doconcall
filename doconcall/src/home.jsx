@@ -317,7 +317,7 @@ export default function DoconcallApp() {
         </div>
         <Phone className="absolute bottom-0 right-0 text-white bg-green-500 rounded-full p-1" size={16} />
       </div>
-      <h1 className="text-3xl font-bold text-blue-700">Doconcall</h1>
+      <h1 className="text-3xl font-bold text-white">Doconcall</h1>
     </div>
   );
 
